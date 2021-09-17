@@ -7,9 +7,13 @@ function MainRoute() {
     return (
         <div>
             <Switch>
+
                 <Route exact path='/' component={Teams} />
                 <Route exact path='/teams' component={Teams} />
-                <Route exact path='/teams/:url' component={Team}  />
+
+                <Route exact path='/teams/:url' component={Team} />
+
+
                 <Route component={Error}></Route>
             </Switch>
         </div>

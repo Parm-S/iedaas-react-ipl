@@ -1,58 +1,77 @@
 import React, { useEffect, useReducer } from 'react'
-import axios from 'axios'
+import axios from '../helper/Axios'
 import Error from '../page/Error';
-import Loading from '../helper/Loading';
-
-
-const useApi = (url) => {
+const useApi = (url, actionType) => {
     const initialState = {
-        loading: <Loading />,
-        error: '',
-        teams: []
+        teams: [],
+        data: {
+            players: []
+        },
+        error: ''
     }
-
     const reducer = (state, action) => {
         switch (action.type) {
             case 'FETCH_SUCCESS':
                 return {
-                    loading: false,
                     teams: action.payload,
-                    error: ''
+                }
+            case 'PLAYER_FETCH_SUCCESS':
+                return {
+                    data: action.payload,
                 }
             case 'FETCH_ERROR':
                 return {
-                    loading: false,
                     teams: {},
-                    error: <Error />
+                    data: {},
+                    error: "something went wrong"
                 }
             default:
                 return state
         }
     }
-
     const [state, dispatch] = useReducer(reducer, initialState)
-    const { teams, loading, error } = state
-
-    async function getTeamsData(url) {
-        await axios.get(url)
-            .then(response => {
-                dispatch({
-                    type: 'FETCH_SUCCESS',
-                    payload: response.data
-                })
+    async function callApiHelper(url) {
+        if (url) {
+            const response = await axios.get(url)
+            return response
+        } else {
+            dispatch({
+                type: 'FETCH_ERROR'
             })
-            .catch(error => {
-                dispatch({
-                    type: 'FETCH_ERROR',
-                })
-            })
+            throw new Error(<Error />)
+        }
     }
-
+    function getTeamsData(url) {
+        callApiHelper(url).then(response => {
+            dispatch({
+                type: 'FETCH_SUCCESS',
+                payload: response.data
+            })
+        }).catch(error=>{
+            dispatch({
+                type: 'FETCH_ERROR'
+            })
+        })
+    }
+    function getTeamPlayerData(url) {
+        callApiHelper(url).then(response => {
+            dispatch({
+                type: 'PLAYER_FETCH_SUCCESS',
+                payload: response.data
+            })
+        }).catch(error=>{
+            dispatch({
+                type: 'FETCH_ERROR'
+            })
+        })
+    }
+    const actions = {
+        getTeamsData: getTeamsData,
+        getTeamPlayerData: getTeamPlayerData
+    }
     useEffect(() => {
-        getTeamsData(url);
-    }, [url])
-    return {loading,error,teams}
-            
+        actions[actionType](url)
+    }, [url, actionType])
+    return state
 };
-
 export default useApi
